@@ -1,4 +1,4 @@
-name: Python Pet Adoption App CI
+name: Python Pet Adoption CI
 
 on:
   push:
@@ -6,21 +6,19 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Run Pet Adoption App
-      run: |
-        python pet.py
+      - name: Run test_app() in pt.py
+        run: |
+          python -c "from pt import test_app; test_app()"
