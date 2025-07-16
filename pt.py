@@ -38,7 +38,7 @@ conn.commit()
 
 # ----------- Models ----------- #
 class Pet:
-    def _init_(self, name, pet_type, age):
+    def __init__(self, name, pet_type, age):  # fixed typo from _init_ to __init__
         self.name = name
         self.pet_type = pet_type
         self.age = age
@@ -49,7 +49,7 @@ class Pet:
         conn.commit()
 
 class Adopter:
-    def _init_(self, name, contact):
+    def __init__(self, name, contact):  # fixed typo from _init_ to __init__
         self.name = name
         self.contact = contact
 
@@ -95,34 +95,46 @@ def view_adoption_history():
     for rec in records:
         print(f"Adoption ID: {rec[0]}, Adopter: {rec[1]}, Pet: {rec[2]}, Date: {rec[3]}")
 
-# ----------- Console Menu ----------- #
-while True:
-    print("\n--- PET ADOPTION SYSTEM ---")
-    print("1. Add Pet")
-    print("2. List Available Pets")
-    print("3. Adopt a Pet")
-    print("4. View Adoption History")
-    print("5. Exit")
+# ----------- Test for GitHub Actions (non-interactive) ----------- #
+def test_app():
+    print("🧪 Adding a test pet...")
+    Pet("Tommy", "Dog", 2).save()
     
-    choice = input("Enter choice: ")
-    if choice == '1':
-        name = input("Pet name: ")
-        pet_type = input("Pet type (Dog/Cat/etc.): ")
-        age = int(input("Pet age: "))
-        print("✅ Pet added.")
+    print("\n📋 Listing available pets:")
+    list_available_pets()
+    
+    print("\n📜 Viewing adoption history:")
+    view_adoption_history()
 
-    elif choice == '2':
-        list_available_pets()
+# ----------- Entry Point ----------- #
+if __name__ == "__main__":
+    # Commented out menu for GitHub Actions compatibility
+    # while True:
+    #     print("\n--- PET ADOPTION SYSTEM ---")
+    #     print("1. Add Pet")
+    #     print("2. List Available Pets")
+    #     print("3. Adopt a Pet")
+    #     print("4. View Adoption History")
+    #     print("5. Exit")
+        
+    #     choice = input("Enter choice: ")
+    #     if choice == '1':
+    #         name = input("Pet name: ")
+    #         pet_type = input("Pet type (Dog/Cat/etc.): ")
+    #         age = int(input("Pet age: "))
+    #         Pet(name, pet_type, age).save()
+    #         print("✅ Pet added.")
+    #     elif choice == '2':
+    #         list_available_pets()
+    #     elif choice == '3':
+    #         adopt_pet()
+    #     elif choice == '4':
+    #         view_adoption_history()
+    #     elif choice == '5':
+    #         print("👋 Goodbye!")
+    #         break
+    #     else:
+    #         print("❌ Invalid choice. Try again.")
 
-    elif choice == '3':
-        adopt_pet()
-
-    elif choice == '4':
-        view_adoption_history()
-
-    elif choice == '5':
-        print("👋 Goodbye!")
-        break
-
-    else:
-        print("❌ Invalid choice. Try again.")
+    # Run test instead
+    test_app()
