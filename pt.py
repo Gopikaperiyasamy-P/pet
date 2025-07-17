@@ -1,8 +1,9 @@
+import streamlit as st
 import sqlite3
 from datetime import datetime
 
-# ----------- Database Setup ----------- #
-conn = sqlite3.connect('pet_adoption.db')
+# ---------- Database Setup ---------- #
+conn = sqlite3.connect("pet_adoption.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -36,9 +37,9 @@ CREATE TABLE IF NOT EXISTS adoptions (
 
 conn.commit()
 
-# ----------- Models ----------- #
+# ---------- Models ---------- #
 class Pet:
-    def __init__(self, name, pet_type, age):  # fixed typo from _init_ to __init__
+    def _init_(self, name, pet_type, age):
         self.name = name
         self.pet_type = pet_type
         self.age = age
@@ -49,7 +50,7 @@ class Pet:
         conn.commit()
 
 class Adopter:
-    def __init__(self, name, contact):  # fixed typo from _init_ to __init__
+    def _init_(self, name, contact):
         self.name = name
         self.contact = contact
 
@@ -58,83 +59,77 @@ class Adopter:
                        (self.name, self.contact))
         conn.commit()
 
-# ----------- Operations ----------- #
-def list_available_pets():
+# ---------- Streamlit App Layout ---------- #
+st.set_page_config(page_title="Pet Adoption App", layout="centered")
+st.title("🐾 Pet Adoption Management System")
+
+# ---------- Navigation ---------- #
+menu = st.sidebar.radio("Navigate", ["Home", "Add Pet", "Adopt Pet", "Available Pets", "Adoption History"])
+
+if menu == "Home":
+    st.subheader("Welcome to the Pet Adoption Center 🏠")
+    st.write("Use the menu on the left to get started.")
+
+elif menu == "Add Pet":
+    st.subheader("➕ Add a Pet")
+    name = st.text_input("Pet Name")
+    pet_type = st.selectbox("Pet Type", ["Dog", "Cat", "Rabbit", "Other"])
+    age = st.number_input("Pet Age", min_value=0, max_value=30)
+
+    if st.button("Save Pet"):
+        pet = Pet(name, pet_type, age)
+        pet.save()
+        st.success("✅ Pet added successfully!")
+
+elif menu == "Adopt Pet":
+    st.subheader("❤ Adopt a Pet")
     cursor.execute("SELECT * FROM pets WHERE status='Available'")
     pets = cursor.fetchall()
+
     if not pets:
-        print("No available pets.")
-    for pet in pets:
-        print(f"ID: {pet[0]}, Name: {pet[1]}, Type: {pet[2]}, Age: {pet[3]}")
+        st.info("No pets currently available.")
+    else:
+        pet_options = {f"{p[1]} ({p[2]}) - ID {p[0]}": p[0] for p in pets}
+        selected = st.selectbox("Select a Pet", list(pet_options.keys()))
+        name = st.text_input("Your Name")
+        contact = st.text_input("Your Contact")
 
-def adopt_pet():
-    list_available_pets()
-    pet_id = input("Enter Pet ID to adopt: ")
-    name = input("Your name: ")
-    contact = input("Your contact: ")
+        if st.button("Confirm Adoption"):
+            adopter = Adopter(name, contact)
+            adopter.save()
 
-    adopter = Adopter(name, contact)
-    adopter.save()
+            pet_id = pet_options[selected]
+            cursor.execute("SELECT id FROM adopters ORDER BY id DESC LIMIT 1")
+            adopter_id = cursor.fetchone()[0]
 
-    cursor.execute("SELECT id FROM adopters ORDER BY id DESC LIMIT 1")
-    adopter_id = cursor.fetchone()[0]
+            cursor.execute("UPDATE pets SET status='Adopted' WHERE id=?", (pet_id,))
+            cursor.execute("INSERT INTO adoptions (adopter_id, pet_id, date) VALUES (?, ?, ?)",
+                           (adopter_id, pet_id, datetime.now().strftime("%Y-%m-%d %H:%M")))
+            conn.commit()
+            st.success("🎉 Adoption successful!")
 
-    cursor.execute("UPDATE pets SET status='Adopted' WHERE id=?", (pet_id,))
-    cursor.execute("INSERT INTO adoptions (adopter_id, pet_id, date) VALUES (?, ?, ?)",
-                   (adopter_id, pet_id, datetime.now().strftime("%Y-%m-%d %H:%M")))
-    conn.commit()
-    print("🎉 Adoption successful!")
+elif menu == "Available Pets":
+    st.subheader("📋 Available Pets")
+    cursor.execute("SELECT * FROM pets WHERE status='Available'")
+    rows = cursor.fetchall()
 
-def view_adoption_history():
+    if not rows:
+        st.info("No pets available right now.")
+    else:
+        for row in rows:
+            st.write(f"*ID:* {row[0]}, *Name:* {row[1]}, *Type:* {row[2]}, *Age:* {row[3]}")
+
+elif menu == "Adoption History":
+    st.subheader("📜 Adoption History")
     cursor.execute('''
-    SELECT a.id, d.name, p.name, a.date FROM adoptions a
-    JOIN adopters d ON a.adopter_id = d.id
-    JOIN pets p ON a.pet_id = p.id
+        SELECT a.id, d.name, p.name, a.date FROM adoptions a
+        JOIN adopters d ON a.adopter_id = d.id
+        JOIN pets p ON a.pet_id = p.id
     ''')
-    records = cursor.fetchall()
-    for rec in records:
-        print(f"Adoption ID: {rec[0]}, Adopter: {rec[1]}, Pet: {rec[2]}, Date: {rec[3]}")
+    history = cursor.fetchall()
 
-# ----------- Test for GitHub Actions (non-interactive) ----------- #
-def test_app():
-    print("🧪 Adding a test pet...")
-    Pet("Tommy", "Dog", 2).save()
-    
-    print("\n📋 Listing available pets:")
-    list_available_pets()
-    
-    print("\n📜 Viewing adoption history:")
-    view_adoption_history()
-
-# ----------- Entry Point ----------- #
-if __name__ == "__main__":
-    # Commented out menu for GitHub Actions compatibility
-    # while True:
-    #     print("\n--- PET ADOPTION SYSTEM ---")
-    #     print("1. Add Pet")
-    #     print("2. List Available Pets")
-    #     print("3. Adopt a Pet")
-    #     print("4. View Adoption History")
-    #     print("5. Exit")
-        
-    #     choice = input("Enter choice: ")
-    #     if choice == '1':
-    #         name = input("Pet name: ")
-    #         pet_type = input("Pet type (Dog/Cat/etc.): ")
-    #         age = int(input("Pet age: "))
-    #         Pet(name, pet_type, age).save()
-    #         print("✅ Pet added.")
-    #     elif choice == '2':
-    #         list_available_pets()
-    #     elif choice == '3':
-    #         adopt_pet()
-    #     elif choice == '4':
-    #         view_adoption_history()
-    #     elif choice == '5':
-    #         print("👋 Goodbye!")
-    #         break
-    #     else:
-    #         print("❌ Invalid choice. Try again.")
-
-    # Run test instead
-    test_app()
+    if not history:
+        st.info("No adoptions yet.")
+    else:
+        for h in history:
+            st.write(f"*Adoption ID:* {h[0]} | *Adopter:* {h[1]} | *Pet:* {h[2]} | *Date:* {h[3]}")
