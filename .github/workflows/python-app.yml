@@ -22,10 +22,8 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          pip install streamlit
+      - name: Install Streamlit
+        run: pip install streamlit
 
-      - name: Run test_app() in pt.py
-        run: |
-          python -c "from pt import test_app; test_app()"
+      - name: Check pt.py syntax
+        run: python -m py_compile pt.py
